@@ -49,7 +49,8 @@ parser.add_argument('--cycle',default=10.0,
 #NOTE: These should really be turned into options... 
 
 spin_up_time = 10 # ka
-base_config = "./GIS.1km.InitCond.4Glissade.config"
+#base_config = "./GIS.1km.InitCond.4Glissade.config"
+base_config = "./GIS.4km.InitCond.4Glissade.config"
 base_root, base_ext = os.path.splitext(base_config)
 
 processors_use = 128
