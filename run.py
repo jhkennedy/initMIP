@@ -5,7 +5,9 @@ Script to run the greenland initialization experiments
 """
 
 import os
+import sys
 import math
+import shutil
 import argparse
 import ConfigParser
 
@@ -35,12 +37,16 @@ def abs_existing_file(file):
 
 parser.add_argument('-d','--driver',default=os.getcwd()+os.sep+"cism_driver", type=abs_existing_file,
         help="The CISM driver.")
-parser.add_argument('--max-vel',default=10.0,
-        help="Maximum velocity, in km/year, within the domain (for computing the CFL condition).")
-parser.add_argument('--grid-res',default=1.0,
-        help="The CISM grid resolution in km.")
-parser.add_argument('--cycle',default=10.0,
-        help="How often to run the velocity solve in years.")
+#FIXME: These are currenlty hard coded (as the same vairable names without the
+#       "args." prepended to it. When these are turned back on, make sure each variable
+#       bellow has "args." prepended to it. 
+#
+#parser.add_argument('--max-vel',default=10.0,
+#        help="Maximum velocity, in km/year, within the domain (for computing the CFL condition).")
+#parser.add_argument('--grid-res',default=1.0,
+#        help="The CISM grid resolution in km.")
+#parser.add_argument('--cycle',default=10.0,
+#        help="How often to run the velocity solve in years.")
 
 
 # ------------------
@@ -49,10 +55,18 @@ parser.add_argument('--cycle',default=10.0,
 #NOTE: These should really be turned into options... 
 
 spin_up_time = 10 # ka
-#base_config = "./GIS.1km.InitCond.4Glissade.config"
-#base_config = "./GIS.4km.InitCond.4Glissade.config"
-base_config = "./GIS.8km.InitCond.4Glissade.config"
-base_root, base_ext = os.path.splitext(base_config)
+cycle = 10 # a -- how often to run the velocity solve
+
+max_vel = 12 # km/a -- max velocity within the domain (for computing the cfl condition). 
+
+grid_res = 8.0 # km
+#base_config = "./base/GIS.1km.InitCond.4Glissade.config"
+#base_config = "./base/GIS.2km.InitCond.4Glissade.config"
+#base_config = "./base/GIS.4km.InitCond.4Glissade.config"
+base_config = "./base/GIS.8km.InitCond.4Glissade.config"
+
+base_path, base_name = os.path.split(base_config)
+base_root, base_ext = os.path.splitext(base_name)
 
 processors_use = 128
 flow_law_switch_time = 3 # ka
@@ -63,25 +77,30 @@ job_dict['PBS_walltime'] = '00:15:00'
 
 # ---------------
 # main run script
-# ---------------
+# ---------------args.
 def main():
 
-    CFL_condition = 0.5*(args.grid_res/args.max_vel) # a
-    sub_cycles = int(math.ceil(args.cycle/CFL_condition))
+    CFL_condition = 0.5*(grid_res/max_vel) # a
+    sub_cycles = int(math.ceil(cycle/CFL_condition))
 
     
     # setup CISM config files
     config_parser = ConfigParser.SafeConfigParser()
     config_parser.read(base_config)
 
-    config_parser.set('time', 'dt', str(args.cycle))
+    config_parser.set('time', 'dt', str(cycle))
     config_parser.set('time', 'subcyc', str(sub_cycles))
     
     config_root = base_root+"."+str(0).zfill(5)+"_"+str(0).zfill(5)
+   
+    shutil.copyfile(os.path.join(base_path, base_root+'.nc'), config_root+'.nc' )
+    
+    config_parser.set('CF input', 'name', config_root+'.nc')
     config_parser.set('CF output', 'name', config_root+'.out.nc')
     config_parser.set('time', 'tstart', '%.1f' % 0)
     config_parser.set('time', 'tend', '%.1f' % 0)
     config_parser.set('options', 'flow_law', str(2))
+
 
     # do the zero step.
     config_name = config_root+base_ext
