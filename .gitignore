@@ -1,5 +1,8 @@
 #### joe made this: https://goel.io/joe
 
+# netCDF files -- add them with the -f option if you want to keep them
+*.nc
+
 #####=== Vim ===#####
 [._]*.s[a-w][a-z]
 [._]s[a-w][a-z]

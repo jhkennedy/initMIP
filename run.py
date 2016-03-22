@@ -36,7 +36,7 @@ def abs_existing_file(file):
 parser.add_argument('-d','--driver',default=os.getcwd()+os.sep+"cism_driver", type=abs_existing_file,
         help="The CISM driver.")
 parser.add_argument('--max-vel',default=10.0,
-        help="Maximum velocity in the domain for computing the CFL condition.")
+        help="Maximum velocity, in km/year, within the domain (for computing the CFL condition).")
 parser.add_argument('--grid-res',default=1.0,
         help="The CISM grid resolution in km.")
 parser.add_argument('--cycle',default=10.0,
@@ -50,7 +50,8 @@ parser.add_argument('--cycle',default=10.0,
 
 spin_up_time = 10 # ka
 #base_config = "./GIS.1km.InitCond.4Glissade.config"
-base_config = "./GIS.4km.InitCond.4Glissade.config"
+#base_config = "./GIS.4km.InitCond.4Glissade.config"
+base_config = "./GIS.8km.InitCond.4Glissade.config"
 base_root, base_ext = os.path.splitext(base_config)
 
 processors_use = 128
@@ -58,7 +59,7 @@ flow_law_switch_time = 3 # ka
 
 job_dict = jobs.titan_dict
 job_dict['RES_NUM'] = str(int(math.ceil(processors_use / 16.0)))
-job_dict['PBS_walltime'] = '01:00:00'
+job_dict['PBS_walltime'] = '00:15:00'
 
 # ---------------
 # main run script
@@ -97,6 +98,7 @@ def main():
     
     # Now the rest of the steps
     config_parser.set('options', 'flow_law', str(0))
+    job_dict['PBS_walltime'] = '01:00:00'
     for step in range(0,spin_up_time):
         if step == flow_law_switch_time:
             config_parser.set('options', 'flow_law', str(2))
