@@ -51,8 +51,10 @@ def abs_creation_path(path):
     return path
 
 
-parser.add_argument('-d','--driver',default=os.getcwd()+os.sep+"cism_driver", type=abs_existing_file,
-        help="The CISM driver.")
+#FIXME: This is hacky, but it allows the default value to be type checked *after* the command line arguments are processed. 
+#       Also, see the note at the bottom of the script, just after the arguments are parsed.
+parser.add_argument('-d','--driver', default=argparse.SUPPRESS, type=abs_existing_file,
+        help="The CISM driver. (default: "+os.path.join(os.getcwd(),'cism_driver')+")")
 parser.add_argument('-r','--run', action='store_true',
         help="Run the spin-up. This will submit all the jobs, with each job held in the queue until the proceeding job"
         +"finishes successfully. If any are unsuccessful, all proceeding jobs will be removed.")
@@ -117,7 +119,8 @@ def main():
     config_root = base_root+"."+str(0).zfill(5)+"_"+str(0).zfill(5)
    
     shutil.copyfile(os.path.join(base_path, base_root+'.nc'), os.path.join(args.working_dir,config_root+'.nc') )
-    
+    os.chmod(os.path.join(args.working_dir,config_root+'.nc'), 0o664) # uses an Octal number!
+
     config_parser.set('CF input', 'name', config_root+'.nc')
     config_parser.set('CF output', 'name', config_root+'.out.nc')
     config_parser.set('time', 'tstart', '%.1f' % 0)
@@ -129,6 +132,7 @@ def main():
     config_name = config_root+base_ext
     with open(os.path.join(args.working_dir,config_name), 'w') as config_file:
         config_parser.write(config_file)
+    os.chmod(os.path.join(args.working_dir,config_name), 0o664) # uses an Octal number!
 
     # make zero step job script
     run_commands = ["cd "+os.path.dirname(os.path.join(args.working_dir,config_name))+" \n",
@@ -159,6 +163,7 @@ def main():
         config_name = config_root+base_ext
         with open(os.path.join(args.working_dir,config_name), 'w') as config_file:
             config_parser.write(config_file)
+        os.chmod(os.path.join(args.working_dir,config_name), 0o664) # uses an Octal number!
     
         # and the rest the job scripts
         run_commands = ["cd "+os.path.dirname(os.path.join(args.working_dir,config_name))+" \n",
@@ -177,4 +182,9 @@ def main():
 
 if __name__=='__main__':
     args = parser.parse_args()
+    #FIXME: This is hacky, but it allows the default value to be type checked *after* the command line arguments are processed. 
+    #       Argparse type checks the defaults immediately, before checking the command line argument. 
+    #       Also, see the note at the to of the script, just after the `--driver` argument is added.
+    if not args.driver:
+        args.driver = abs_existing_file(os.path.join(os.getcwd(),"cism_driver"))
     main()

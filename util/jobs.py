@@ -54,5 +54,6 @@ def create_job(args, job_name, p_replace, run_commands):
 
         job_file.write("\nwait \n# FINISH\n")
 
+    os.chmod(os.path.join(args.working_dir,job_name), 0o774) # uses an Octal number!
 
 
