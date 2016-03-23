@@ -1,3 +1,6 @@
+import os
+import sys
+
 # HPC PLATFORM DICTIONARIES
 # =========================
 # There should be a dictionary for each supported HPC platform which specifies 
@@ -36,8 +39,8 @@ def create_job(args, job_name, p_replace, run_commands):
     Create the job script for the HPC queues.
     """
 
-    with open(job_name, 'w') as job_file:
-        with open('util/job.template','r') as base_job: 
+    with open(os.path.join(args.working_dir,job_name), 'w') as job_file:
+        with open(os.path.join(sys.path[0],'util/job.template'),'r') as base_job: 
             for line in base_job:
                 for src, target in p_replace.iteritems():
                     line = line.replace(src, target)

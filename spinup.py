@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 """
-Script to run the greenland initialization experiments
+Script to run the Greenland initialization experiments
 """
 
 import os
@@ -9,6 +9,7 @@ import sys
 import math
 import shutil
 import argparse
+import subprocess
 import ConfigParser
 
 from util import jobs
@@ -35,9 +36,29 @@ def abs_existing_file(file):
         sys.exit(1)
     return file
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
+
+def abs_creation_path(path):
+    path = os.path.abspath(path)
+    if not os.path.isdir(path):
+        mkdir_p(path)
+    return path
+
+
 parser.add_argument('-d','--driver',default=os.getcwd()+os.sep+"cism_driver", type=abs_existing_file,
         help="The CISM driver.")
-#FIXME: These are currenlty hard coded (as the same vairable names without the
+parser.add_argument('-r','--run', action='store_true',
+        help="Run the spin-up. This will submit all the jobs, with each job held in the queue until the proceeding job"
+        +"finishes successfully. If any are unsuccessful, all proceeding jobs will be removed.")
+parser.add_argument('-w','--working-dir',default=os.getcwd()+os.sep+"work", type=abs_creation_path,
+        help="The directory to run the spin-up in.")
+#FIXME: These are currently hard coded (as the same variable names without the
 #       "args." prepended to it. When these are turned back on, make sure each variable
 #       bellow has "args." prepended to it. 
 #
@@ -65,7 +86,7 @@ grid_res = 8.0 # km
 #base_config = "./base/GIS.4km.InitCond.4Glissade.config"
 base_config = "./base/GIS.8km.InitCond.4Glissade.config"
 
-base_path, base_name = os.path.split(base_config)
+base_path, base_name = os.path.split(os.path.abspath(base_config))
 base_root, base_ext = os.path.splitext(base_name)
 
 processors_use = 128
@@ -80,20 +101,22 @@ job_dict['PBS_walltime'] = '00:15:00'
 # ---------------args.
 def main():
 
+    os.chdir(args.working_dir)
+
     CFL_condition = 0.5*(grid_res/max_vel) # a
     sub_cycles = int(math.ceil(cycle/CFL_condition))
 
     
     # setup CISM config files
     config_parser = ConfigParser.SafeConfigParser()
-    config_parser.read(base_config)
+    config_parser.read(os.path.join(base_path,base_name))
 
     config_parser.set('time', 'dt', str(cycle))
     config_parser.set('time', 'subcyc', str(sub_cycles))
     
     config_root = base_root+"."+str(0).zfill(5)+"_"+str(0).zfill(5)
    
-    shutil.copyfile(os.path.join(base_path, base_root+'.nc'), config_root+'.nc' )
+    shutil.copyfile(os.path.join(base_path, base_root+'.nc'), os.path.join(args.working_dir,config_root+'.nc') )
     
     config_parser.set('CF input', 'name', config_root+'.nc')
     config_parser.set('CF output', 'name', config_root+'.out.nc')
@@ -104,17 +127,21 @@ def main():
 
     # do the zero step.
     config_name = config_root+base_ext
-    with open(config_name, 'w') as config_file:
+    with open(os.path.join(args.working_dir,config_name), 'w') as config_file:
         config_parser.write(config_file)
 
     # make zero step job script
-    run_commands = ["cd "+os.path.dirname(os.path.abspath(config_name))+" \n",
-                    "aprun -n "+str(processors_use)+" "+args.driver+" "+os.path.abspath(config_name)+" \n"]
+    run_commands = ["cd "+os.path.dirname(os.path.join(args.working_dir,config_name))+" \n",
+                    "aprun -n "+str(processors_use)+" "+args.driver+" "+os.path.join(args.working_dir,config_name)+" \n"]
     job_name = config_root+".bash"
     job_dict['PBS_N'] = os.path.basename(config_root)
     
     jobs.create_job(args, job_name, job_dict, run_commands)
-    
+
+    if args.run:
+        last_job_id = subprocess.check_output("qsub "+os.path.join(args.working_dir,job_name), shell=True)
+        print(last_job_id.strip())
+
     # Now the rest of the steps
     config_parser.set('options', 'flow_law', str(0))
     job_dict['PBS_walltime'] = '01:00:00'
@@ -130,16 +157,21 @@ def main():
         config_parser.set('time', 'tend', '%.1f' % float((step+1)*1000))
         
         config_name = config_root+base_ext
-        with open(config_name, 'w') as config_file:
+        with open(os.path.join(args.working_dir,config_name), 'w') as config_file:
             config_parser.write(config_file)
     
-        # and the rest the job scipts
-        run_commands = ["cd "+os.path.dirname(os.path.abspath(config_name))+" \n",
-                        "aprun -n "+str(processors_use)+" "+args.driver+" "+os.path.abspath(config_name)+" \n"]
+        # and the rest the job scripts
+        run_commands = ["cd "+os.path.dirname(os.path.join(args.working_dir,config_name))+" \n",
+                        "aprun -n "+str(processors_use)+" "+args.driver+" "+os.path.join(args.working_dir,config_name)+" \n"]
         job_name = config_root+".bash"
         job_dict['PBS_N'] = os.path.basename(config_root)
         
         jobs.create_job(args, job_name, job_dict, run_commands)
+        
+        if args.run:
+            last_job_id = subprocess.check_output("qsub -W depend=afterok:"+last_job_id.strip()+" "+os.path.join(args.working_dir,job_name), shell=True)
+            print(last_job_id.strip())
+
         
 
 
