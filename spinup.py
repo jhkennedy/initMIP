@@ -98,7 +98,7 @@ job_dict['PBS_walltime'] = '00:15:00'
 
 # ---------------
 # main run script
-# ---------------args.
+# ---------------
 def main():
 
     os.chdir(args.working_dir)
