@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 """
-Script to run the Greenland initialization experiments
+Script to spin up Greenland for the initMIP initialization experiments
 """
 
 import os
@@ -58,7 +58,7 @@ parser.add_argument('-d','--driver', default=argparse.SUPPRESS, type=abs_existin
 parser.add_argument('-r','--run', action='store_true',
         help="Run the spin-up. This will submit all the jobs, with each job held in the queue until the proceeding job"
         +"finishes successfully. If any are unsuccessful, all proceeding jobs will be removed.")
-parser.add_argument('-w','--working-dir',default=os.getcwd()+os.sep+"work", type=abs_creation_path,
+parser.add_argument('-w','--working-dir',default=os.path.join(os.getcwd(),"work"), type=abs_creation_path,
         help="The directory to run the spin-up in.")
 #FIXME: These are currently hard coded (as the same variable names without the
 #       "args." prepended to it. When these are turned back on, make sure each variable
@@ -76,20 +76,13 @@ parser.add_argument('-w','--working-dir',default=os.getcwd()+os.sep+"work", type
 # Hard coded options
 # ------------------
 #NOTE: These should really be turned into options... 
-
 spin_up_time = 10 # ka
 cycle = 10 # a -- how often to run the velocity solve
+input_time_slice = 11 # time slice to use on from input files. Note, for all input files, except the initial one
 
 max_vel = 12 # km/a -- max velocity within the domain (for computing the cfl condition). 
 
 grid_res = 8.0 # km
-#base_config = "./base/GIS.1km.InitCond.4Glissade.config"
-#base_config = "./base/GIS.2km.InitCond.4Glissade.config"
-#base_config = "./base/GIS.4km.InitCond.4Glissade.config"
-base_config = "./base/GIS.8km.InitCond.4Glissade.config"
-
-base_path, base_name = os.path.split(os.path.abspath(base_config))
-base_root, base_ext = os.path.splitext(base_name)
 
 processors_use = 128
 flow_law_switch_time = 3 # ka
@@ -98,11 +91,61 @@ job_dict = jobs.titan_dict
 job_dict['RES_NUM'] = str(int(math.ceil(processors_use / 16.0)))
 job_dict['PBS_walltime'] = '00:15:00'
 
+# temerature solve to use:
+#   0 = use air temp for column temps 
+#   1 = prognostic
+#   2 = hold temps. fixed at init. values
+#   3 = enthalpy (untested)
+which_temperature = 3
+
+## ---------------------------
+## Hard coded GLISSADE options
+## ---------------------------
+##NOTE: These should really be turned into options... 
+#dycore = "Glissade"
+#base_config = "./base/GIS.8km.InitCond.4Glissade.config"
+#
+## which_ho_approx to use, when:
+##   2 = Blatter-Pattyn
+##   4 = DIVA
+#ho_approx_zeroth    = 2   # Just for the zeroth step
+#ho_approx_temp_spin = 4   # for the first part where flow_law is constant (tempurate decoupled)
+#ho_approx_coupled   = 4   # now tempurature and velocity is coupled
+#
+## Which preconditioner to use:
+##    1 = diag. precond. (needed for use w/ DIVA)
+##    2 = physics-based (SIA)
+#precond_zeroth    = 2  # Just for the zeroth step
+#precond_temp_spin = 1  # for the first part where flow_law is constant (tempurate decoupled)
+#precond_coupled   = 1  # now tempurature and velocity is coupled
+#
+## how many iterations to allow (default = 100)
+#glissade_iters = 200
+
+# -------------------------
+# Hard coded ALBANY options
+# -------------------------
+#NOTE: These should really be turned into options... 
+dycore = "Albany"
+base_config = "./base/GIS.8km.InitCond.4Albany.config"
+
+# which_ho_approx to use, when:
+#   2 = Blatter-Pattyn
+#   4 = DIVA
+ho_approx_zeroth    = 2   # Just for the zeroth step
+ho_approx_temp_spin = 2   # for the first part where flow_law is constant (tempurate decoupled)
+ho_approx_coupled   = 2   # now tempurature and velocity is coupled
+
+
 # ---------------
 # main run script
 # ---------------
 def main():
 
+    base_path, base_name = os.path.split(abs_existing_file(base_config))
+    base_root, base_ext = os.path.splitext(base_name)
+
+    os.chmod(args.working_dir, 0o775) # uses an octal number!
     os.chdir(args.working_dir)
 
     CFL_condition = 0.5*(grid_res/max_vel) # a
@@ -119,20 +162,30 @@ def main():
     config_root = base_root+"."+str(0).zfill(5)+"_"+str(0).zfill(5)
    
     shutil.copyfile(os.path.join(base_path, base_root+'.nc'), os.path.join(args.working_dir,config_root+'.nc') )
-    os.chmod(os.path.join(args.working_dir,config_root+'.nc'), 0o664) # uses an Octal number!
+    os.chmod(os.path.join(args.working_dir,config_root+'.nc'), 0o664) # uses an octal number!
+    if dycore == "Albany":
+        shutil.copyfile(os.path.join(base_path,'input_albany-cism.xml'), os.path.join(args.working_dir,'input_albany-cism.xml') )
+        os.chmod(os.path.join(args.working_dir,'input_albany-cism.xml'), 0o664) # uses an octal number!
+        shutil.copyfile(os.path.join(base_path,'input_albany-cism.ILU.xml'), os.path.join(args.working_dir,'input_albany-cism.ILU.xml') )
+        os.chmod(os.path.join(args.working_dir,'input_albany-cism.ILU.xml'), 0o664) # uses an octal number!
 
     config_parser.set('CF input', 'name', config_root+'.nc')
     config_parser.set('CF output', 'name', config_root+'.out.nc')
     config_parser.set('time', 'tstart', '%.1f' % 0)
     config_parser.set('time', 'tend', '%.1f' % 0)
     config_parser.set('options', 'flow_law', str(2))
+    config_parser.set('options', 'temperature', str(which_temperature))
+    config_parser.set('ho_options', 'which_ho_approx', str(ho_approx_zeroth)) 
+    if dycore == "Glissade":
+        config_parser.set('ho_options', 'which_ho_precond', str(precond_zeroth)) 
+        config_parser.set('ho_options', 'glissade_maxiter', str(glissade_iters)) 
 
 
     # do the zero step.
     config_name = config_root+base_ext
     with open(os.path.join(args.working_dir,config_name), 'w') as config_file:
         config_parser.write(config_file)
-    os.chmod(os.path.join(args.working_dir,config_name), 0o664) # uses an Octal number!
+    os.chmod(os.path.join(args.working_dir,config_name), 0o664) # uses an octal number!
 
     # make zero step job script
     run_commands = ["cd "+os.path.dirname(os.path.join(args.working_dir,config_name))+" \n",
@@ -146,15 +199,26 @@ def main():
         last_job_id = subprocess.check_output("qsub "+os.path.join(args.working_dir,job_name), shell=True)
         print(last_job_id.strip())
 
+    
     # Now the rest of the steps
     config_parser.set('options', 'flow_law', str(0))
+    config_parser.remove_option('options', 'temp_init')
+    config_parser.set('ho_options', 'which_ho_approx', str(ho_approx_temp_spin)) 
+    if dycore == "Glissade":
+        config_parser.set('ho_options', 'which_ho_precond', str(precond_temp_spin)) 
+    
     job_dict['PBS_walltime'] = '01:00:00'
     for step in range(0,spin_up_time):
         if step == flow_law_switch_time:
             config_parser.set('options', 'flow_law', str(2))
+            config_parser.set('ho_options', 'which_ho_approx', str(ho_approx_coupled)) 
+            if dycore == "Glissade":
+                config_parser.set('ho_options', 'which_ho_precond', str(precond_coupled)) 
         
         config_parser.set('CF input', 'name', config_root+'.out.nc')
-
+        if step > 0:
+            config_parser.set('CF input', 'time', str(input_time_slice))
+        
         config_root = base_root+"."+str(step*1000).zfill(5)+"_"+str((step+1)*1000).zfill(5)
         config_parser.set('CF output', 'name', config_root+'.out.nc')
         config_parser.set('time', 'tstart', '%.1f' % float(step*1000))
@@ -163,7 +227,7 @@ def main():
         config_name = config_root+base_ext
         with open(os.path.join(args.working_dir,config_name), 'w') as config_file:
             config_parser.write(config_file)
-        os.chmod(os.path.join(args.working_dir,config_name), 0o664) # uses an Octal number!
+        os.chmod(os.path.join(args.working_dir,config_name), 0o664) # uses an octal number!
     
         # and the rest the job scripts
         run_commands = ["cd "+os.path.dirname(os.path.join(args.working_dir,config_name))+" \n",
