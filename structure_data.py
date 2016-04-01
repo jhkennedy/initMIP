@@ -67,7 +67,7 @@ parser.add_argument('-s','--submit-dir',default=os.path.join(os.getcwd(),"submit
 #               VAR_IS_GROUP_MODEL_EXP.nc
 IS = 'GIS'
 GROUP = 'ORNL'
-MODEL = 'CISMALBANY'
+MODEL = 'CISM1'
 
 # datafile to massage
 EXP = 'init'
