@@ -4,6 +4,14 @@
 Script to spin up Greenland for the initMIP initialization experiments
 """
 
+#FIXME: So, CISM allows for multiple CF output sections in the config file inorder to
+#       setup multiple output files (with their own frequency, and variables). However,
+#       config parser does *not* allow multiple sections with the same name, so the second
+#       one will over-ride the first. Config file has been edited to just dump everything
+#       every step. This is SLOWWW.
+#NOTE:  Will move to an annual ouput instead of every step once the full 100 years are 
+#       able to be successfuly simulated. 
+
 import os
 import sys
 import math

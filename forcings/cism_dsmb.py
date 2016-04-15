@@ -16,6 +16,8 @@ from netCDF4 import Dataset
 
 from util import ncfunc
 
+class DataGrid():
+    pass
 
 base_reso = 1 # km
 
@@ -28,7 +30,7 @@ nc_ismip6 = ncfunc.get_nc_file(f_ismip6, 'r')
 f_name = 'GIS.1km.dSMB.4Glissade.nc'
 idx = f_name.find('km')
 
-base = ncfunc.DataGrid()
+base = DataGrid()
 
 base.y = nc_base.variables['y1']
 base.y0 = nc_base.variables['y0']
@@ -49,10 +51,10 @@ base.staglevel = nc_base.variables['staglevel']
 base.stagwbndlevel = nc_base.variables['stagwbndlevel']
 
 
-skips = [1,2,4,8] # reso == skips * base_reso
+skips = [1,2,4,5,8,10] # reso == skips * base_reso
 for  skip in skips:
     # setup coarsened data file
-    coarse = ncfunc.DataGrid()
+    coarse = DataGrid()
 
     coarse.ny = base.y[::skip].shape[0]
     coarse.nx = base.x[::skip].shape[0]

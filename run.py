@@ -93,8 +93,8 @@ which_temperature = 3
 # Hard coded GLISSADE options
 # ---------------------------
 #NOTE: These should really be turned into options... 
-dycore = "Glissade"
-const_config = "./base/GIS.8km.Const.4Glissade.config"
+dycore = "Albany"
+const_config = "./base/GIS.8km.Const.4Albany.config"
 test_config = "./base/GIS.8km.Test.4Glissade.config"
 
 # ---------------

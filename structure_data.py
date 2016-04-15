@@ -4,6 +4,7 @@
 This script is used to structure the CISM output data for initMIP submission
 """
 
+
 import os
 import sys
 import shutil
@@ -93,7 +94,66 @@ def setup_var_file(args, var_name, base):
     else:
         time_var[:] = base.time[:]
     return nc_var
-    
+   
+def create_var_file(base_var, submit_var):
+    # base var: (time, y1, x1)
+    # submit_var: (time, y, x)
+    nc_submit = setup_var_file(args, submit_var, base)
+    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
+    try:
+        if EXP == 'init':
+            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
+        else:
+            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
+    except:
+        pass
+    nc_submit.close()
+
+def create_stg_var_file(base_var, submit_var):
+    # base var: (time, y0, x0)
+    # submit_var: (time, y, x)
+    #FIXME: need to do some reprojecting here...
+    nc_submit = setup_var_file(args, submit_var, base)
+    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
+    try:
+        if EXP == 'init':
+            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
+        else:
+            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
+    except:
+        pass
+    nc_submit.close()
+
+def create_stglvl_var_file(base_var, submit_var, lvl):
+    # base var: (time, level, y0, x0)
+    # submit_var: (time, y, x)
+    #FIXME: need to do some reprojecting here...
+    nc_submit = setup_var_file(args, submit_var, base)
+    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
+    try:
+        if EXP == 'init':
+            sv[0,:,:] = nc_base.variables[base_var][-1,lvl,:,:] 
+        else:
+            sv[:,:,:] = nc_base.variables[base_var][:,lvl,:,:]
+    except:
+        pass
+    nc_submit.close()
+
+def create_stgwbndlvl_var_file(base_var, submit_var, lvl):
+    # base var: (time, stagwbndlevel, y1, x1)
+    # submit_var: (time, y, x)
+    #FIXME: need to do some reprojecting here...
+    nc_submit = setup_var_file(args, submit_var, base)
+    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
+    try:
+        if EXP == 'init':
+            sv[0,:,:] = nc_base.variables[base_var][-1,lvl,:,:] 
+        else:
+            sv[:,:,:] = nc_base.variables[base_var][:,lvl,:,:]
+    except:
+        pass
+    nc_submit.close()
+
 
 # ---------------
 # main run script
@@ -126,6 +186,7 @@ def main():
     base.stagwbndlevel = nc_base.variables['stagwbndlevel']
 
 
+    #FIXME: need to bring in example file to get the right x,y coordnates values
     
 
 
@@ -138,202 +199,64 @@ def main():
     # --------------------------------------------------------------------------
 
     # Ice thickness (x,y,t)  |  lithk  |  land_ice_thickness  |  m  |  The thickness of the ice sheet
-    base_var = 'thk' # (time, y1, x1)
-    submit_var = 'lithk'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
-    except:
-        pass
-    nc_submit.close()
+    create_var_file('thk', 'lithk') 
+                   # thk (time, y1, x1)
 
     # Surface elevation (x,y,t)  |  orog  |  surface_altitude  |  m  |  The altitude or surface elevation of the ice sheet
-    base_var = 'usurf' # (time, y1, x1)
-    submit_var = 'orog'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
-    except:
-        pass
-    nc_submit.close()
-
-
+    create_var_file('usurf', 'orog') 
+                   # usurf (time, y1, x1)
+    
     # Bedrock elevation (x,y,t)  |  topg  |  bedrock_altitude  |  m  |  The bedrock topography
-    base_var = 'topg' # (time, y1, x1)
-    submit_var = 'topg'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_var_file('topg', 'topg') 
+                   # topg (time, y1, x1)
+                   #  (time, y1, x1)
 
     # Geothermal heat flux (x,y)  |  hfgeoubed  |  upward_geothermal_heat_flux_at_ground_level  |  W m-2  |  Geothermal Heat flux
-    base_var = 'bheatflx' # (time, y1, x1)
-    submit_var = 'hfgeoubed'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-    except:
-        pass
-    nc_submit.close()
-
+    create_var_file('bheatflx', 'hfgeoubed')
+                   # bheatflx (time, y1, x1)
 
     # Surface mass balance flux (x,y,t)  |  acabf  |  land_ice_surface_specific_mass_balance_flux  |  kg m-2 s-1  | Surface Mass Balance flux
-    base_var = 'acab' # (time, y1, x1)
-    submit_var = 'acabf'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_var_file('acab', 'acabf')
+                   # acab (time, y1, x1)
 
     # Basal mass balance flux (x,y,t)  |  libmassbf  |  land_ice_basal_specific_mass_balance_flux  |  kg m-2 s-1  |  Basal mass balance flux
-    base_var = 'bmlt' # (????)
-    submit_var = 'libmassbf'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_var_file('bmlt', 'libmassbf')
+                   # bmlt (????)
 
     # Ice thickness imbalance (x,y,t)  |  dlithkdt  |  tendency_of_land_ice_thickness  |  m s-1  |  dHdt
-    base_var = 'dthckdtm' # (????) NOTE: Glide only
-    submit_var = 'dlithkdt'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_var_file('dthckdtm', 'dlithkdt') 
+                   # dthckdtm (????) NOTE: Glide only
 
     # Surface velocity in x (x,y,t)  |  uvelsurf  |  land_ice_surface_x_velocity  |  m s-1  |  u-velocity at land ice surface
-    base_var ='uvel' # (time, level, y0, x0)
-                     # level = 0
     submit_var = 'uvelsurf'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,0,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,0,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_stglvl_var_file('uvel', 'uvelsurf', 0)
+                   #  (time, level, y0, x0)
+                   # level = 0
 
     # Surface velocity in y (x,y,t)  |  vvelsurf  |  land_ice_surface_y_velocity  |  m s-1  |  v-velocity at land ice surface
-    base_var ='vvel' # (time, level, y0, x0)
-                     # level = 0
-    submit_var = 'vvelsurf'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,0,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,0,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_stglvl_var_file('vvel', 'vvelsurf', 0)
+                   # vvel (time, level, y0, x0)
+                   # level = 0
 
     # Surface velocity in z (x,y,t)  |  wvelsurf  |  land_ice_surface_upward_velocity |  m s-1  |  w-velocity at land ice surface 
-    base_var ='wvel' # (????)
-                     # level = 0
-    submit_var = 'wvelsurf'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,0,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,0,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_stglvl_var_file('wvel', 'wvelsurf', 0)
+                   # wvel (time, level, y0, x0)
+                   # level = 0
 
     # Basal velocity in x (x,y,t)  |  uvelbase  |  land_ice_basal_x_velocity  |  m s-1  |  u-velocity at land ice base
-    base_var ='uvel' # (time, level, y0, x0)
-                     # level = 11
-    submit_var = 'uvelbase'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,-1,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_stglvl_var_file('uvel', 'uvelbase', -1)
+                   # uvel (time, level, y0, x0)
+                   # level = 11
 
     # Basal velocity in y (x,y,t)  |  vvelbase  |  land_ice_basal_y_velocity  |  m s-1  |  v-velocity at land ice base
-    base_var ='vvel' # (time, level, y0, x0)
-                     # level = 11
-    submit_var = 'vvelbase'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,-1,:,:]
-    except:
-        pass
-    nc_submit.close()
-
-
+    create_stglvl_var_file('vvel', 'vvelbase', -1)
+                   # vvel (time, level, y0, x0)
+                   # level = 11
 
     # Basal velocity in z (x,y,t)  |  wvelbase  |  land_ice_basal_upward_velocity  |  m s-1  |  w-velocity at land ice base
-    base_var ='wvel' # (????)
-                     # level = 11
-    submit_var = 'wvelbase'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,-1,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_stglvl_var_file('wvel', 'wvelbase', -1)
+                   # wvel (time, level, y0, x0)
+                   # level = 11
 
     # Mean velocity in x (x,y,t)  |  uvelmean  |  land_ice_vertical_mean_x_velocity  |  m s-1  |  The vertical mean land ice velocity 
     #    is the average from the bedrock to the surface of the ice
@@ -344,69 +267,25 @@ def main():
     # average over levels in vvel
 
     # Surface temperature (x,y,t)  |  litempsnic  |  temperature_at_ground_level_in_snow_or_firn  |  K  |  Ice temperature at surface
-    base_var = 'tempstag' # (time, stagwbndlevel, y1, x1)
-                          # stagwbndlevel = 0
-                          # could also use 'surftemp' or 'temp'
-    submit_var = 'litempsnic'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,0,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,0,:,:]
-    except:
-        pass
-    nc_submit.close()
-
-
+    create_stgwbndlvl_var_file('tempstag', 'litempsnic', 0)
+                   # tempstag (time, stagwbndlevel, y1, x1)
+                   # stagwbndlevel = 0
+                   # could also use 'surftemp' or 'temp'
 
     # Basal temperature (x,y,t)  |  litempbot  |  land_ice_basal_temperature  |  K  |  Ice temperature at base
-    base_var = 'tempstag' # (time, stagwbndlevel, y1, x1)
-                          # stagwbndlevel = 11 or 12 ?
-                          # could also use 'btemp' or 'temp'
-    submit_var = 'litempbot'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,-1,:,:]
-    except:
-        pass
-    nc_submit.close()
+    create_stgwbndlvl_var_file('tempstag', 'litempbot', -1)
+                   # tempstag (time, stagwbndlevel, y1, x1)
+                   # stagwbndlevel = 11 or 12 ?
+                   # could also use 'btemp' or 'temp'
 
     # Basal drag (x,y,t)  |  strbasemag  |  magnitude_of_land_ice_basal_drag  |  Pa  |  Magnitude of basal drag
-    base_var = 'beta' # (time, y0, x0)
-    submit_var = 'strbasemag'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_stg_var_file('beta', 'strbasemag')
+                   # beta (time, y0, x0)
 
     # Calving flux (x,y,t)  |  licalvf  |  land_ice_specific_mass_flux_due_to_calving  |  kg m-2 s-1  |  Loss of ice mass resulting 
     #    from iceberg calving. Only for grid cells in contact with ocean
-    base_var = 'calving' # (????)
-    submit_var = 'licalvf'
-    nc_submit = setup_var_file(args, submit_var, base)
-    sv = nc_submit.createVariable(submit_var, 'd', ('time', 'y','x',) )
-    try:
-        if EXP == 'init':
-            sv[0,:,:] = nc_base.variables[base_var][-1,:,:] 
-        else:
-            sv[:,:,:] = nc_base.variables[base_var][:,:,:]
-    except:
-        pass
-    nc_submit.close()
-
+    create_stg_var_file('calving', 'licalvf')
+                   # calving (????)
 
     # Land ice area fraction (x,y,t)  |  sftgif  |  land_ice_area_fraction  |  1  |  Fraction of grid cell covered by land ice 
     #    (ice sheet, ice shelf, ice cap, glacier)
@@ -445,8 +324,6 @@ def main():
     # Total BMB flux (t)  |  tendlibmassbf  |  tendency_of_land_ice_mass_due_to_basal_mass_balance  |  kg s-1  |  spatial integration
 
     # Total calving flux (t)  |  tendlicalvf  |  tendency_of_land_ice_mass_due_to_calving  |  kg s-1  |  spatial integration 
-
-
 
 if __name__=='__main__':
     args = parser.parse_args()
