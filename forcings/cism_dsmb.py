@@ -21,7 +21,7 @@ class DataGrid():
 
 base_reso = 1 # km
 
-f_base = 'GIS.1km.InitCond.4Glissade.nc'
+f_base = '../base/Glissade/GIS.1km.InitCond.4Glissade.nc'
 nc_base = ncfunc.get_nc_file(f_base, 'r')
 
 f_ismip6 = 'dsmb_01B13_ISMIP6_v2.nc' 
