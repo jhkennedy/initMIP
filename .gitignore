@@ -1,5 +1,17 @@
 #### joe made this: https://goel.io/joe
 
+# The Albany_configs directory from SPrice (only relevant on titan)
+Albany_configs/
+
+# LIVV and CISM-albany directories
+LIVV/
+cism-albany/
+
+# data directories
+tests/
+submit/
+
+
 # netCDF files -- add them with the -f option if you want to keep them
 *.nc
 
