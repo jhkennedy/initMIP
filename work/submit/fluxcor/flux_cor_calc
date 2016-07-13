@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# ==========================================
+# BASH Commands for doing these corrections 
+# ==========================================
+
+# Calculate the flux correction:
+# flux_correction = -1.0 * (thk(time=1) - thk(time=0))/dt, in the same units as SMB (m/yr)
+
+
+# seperate out the two time steps
+ncks -v thk -d time,0,0 GIS.8km.Const.4Albany.correction.out.nc -O GIS.8km.Const.4Albany.t0.out.nc
+ncks -v thk -d time,1,1 GIS.8km.Const.4Albany.correction.out.nc -O GIS.8km.Const.4Albany.t1.out.nc
+
+# diff the two time steps (file1 - file2 = file3)
+ncdiff GIS.8km.Const.4Albany.t0.out.nc GIS.8km.Const.4Albany.t1.out.nc GIS.8km.Const.4Albany.tdiff.out.nc
+
+# divide by dt
+ncap2 -O -s "thk=thk/0.01" GIS.8km.Const.4Albany.tdiff.out.nc GIS.8km.Const.4Albany.flxcor.out.nc
+
+# get the right name
+ncrename -O -v thk,flux_correction GIS.8km.Const.4Albany.flxcor.out.nc
+
+# clean up the attributes
+ncatted -O -a long_name,flux_correction,o,c,"flux correction" GIS.8km.Const.4Albany.flxcor.out.nc
+ncatted -O -a standard_name,flux_correction,d,c,"\n" GIS.8km.Const.4Albany.flxcor.out.nc
+ncatted -O -a units,flux_correction,o,c,"meter/year" GIS.8km.Const.4Albany.flxcor.out.nc

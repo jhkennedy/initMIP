@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# ============================================
+# BASH Commands for setting up the correciton 
+# ============================================
+
+# create a version without the SMB inorder to calculate the flux correction
+ncks -x -v acab GIS.8km.InitCond.4Albany.09000_10000.out.nc GIS.8km.Const.4Albany.noacab.out.nc
+
+# run the single step to find the change in thickness for the correction
+qsub GIS.8km.Const.4Albany.correction.bash
+

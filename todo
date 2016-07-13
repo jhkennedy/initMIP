@@ -1,0 +1,79 @@
+Const --> Ctrl
+Test --> Asmb
+
+abs_creation_path --> abs_creation_dir
+
+nc var atributes
+
+
+=======================================================================================================================
+=======================================================================================================================
+
+
+Currently output:
+-----------------
+MINE: variables = thk topg artm acab beta bheatflx uvel vvel wvel         usurf                       temp iarea iareag iareaf ivol rho_ice flwa
+BILL: variables = thk topg artm acab beta bheatflx temp uvel vvel velnorm usurf btemp bpmp effecpress
+B100: variables = thk topg                bheatflx                        usurf                      
+                  sfc_mbal_flux_tavg basal_mbal_flux_tavg dthck_dt_tavg calving_flux_tavg usfc vsfc wsfc ubas vbas wbas uvel_mean vvel_mean surftemp btemp btract ice_mask grounded_mask floating_mask                                                        
+
+
+
+
+
+
+
+ME2D: variables = thk topg acab artm beta bheatflx uvel vvel wvel velnorm usurf btemp bpmp effecpress temp                                  flwa 
+                  sfc_mbal_flux_tavg basal_mbal_flux_tavg dthck_dt_tavg calving_flux_tavg usfc vsfc wsfc ubas vbas wbas uvel_mean vvel_mean surftemp btemp btract ice_mask grounded_mask floating_mask 	
+REQ2: variables = thk topg                bheatflx                        usurf 
+                  sfc_mbal_flux      basal_mbal_flux      dthck_dt      calving_flux      usfc vsfc wsfc ubas vbas wbas uvel_mean vvel_mean surftemp btemp btract ice_mask grounded_mask floating_mask
+
+ME1D: variables =                                                                                          iarea iareag iareaf        
+                  imass imass_above_flotation total_smb_flux total_bmb_flux total_calving_flux	
+REQ1: variables =                                                                                                iareag iareaf 
+                  imass imass_above_flotation total_smb_flux total_bmb_flux total_calving_flux    
+
+
+
+
+
+2D fields required for initMIP:                 CISM name            initMIP name
+---------------------------------------------------------------------------------
+NOTE: Requested as snapshots, every five years, starting at t=0
+---------------------------------------------------------------------------------
+(1)  ice thickness (m)                            thk                lithk
+(2)  surface elevation (m)                        usurf              orog
+(3)  bedrock elevation (m)                        topg               topg
+(4)  geothermal heat flux (W/m2)                  bheatflx           hfgeoubed
+(5)  surface mass balance flux (kg/m2/s)        + sfc_mbal_flux      acabf
+(6)  basal mass balance flux (kg/m2/s)          + basal_mbal_flux    libmassbf
+(7)  ice thickness imbalance dH/dt (m/s)        + dthck_dt           slithkdt
+(8)  u surface velocity (m/s)                   + usfc               uvelsurf
+(9)  v surface velocity (m/s)                   + vsfc               vvelsurf
+(10) w surface velocity (m/s)                   + wsfc               wvelsurf
+(11) u basal velocity (m/s)                       ubas               uvelbase
+(12) v basal velocity (m/s)                       vbas               vvelbase
+(13) w basal velocity (m/s)                     + wbas               wvelbase
+(14) u mean velocity (m/s)                      + uvel_mean          uvelmean
+(15) v mean velocity (m/s)                      + vvel_mean          vvelmean
+(16) surface temperature (K)                      surftemp           litempsnic
+(17) basal temperature (K)                        btemp              litempbot
+(18) basal drag (Pa)                            + btract             strbasemag
+(19) calving flux (kg/m2/s)                     + calving_flux       licalvf
+(20) land ice area fraction (1)                   ice_mask           sftgif
+(21) grounded ice area fraction (1)             + grounded_mask      sfrgrf
+(22) floating ice area fraction (1)               floating_mask      sftflf
+
+
+Global scalars required for initMIP:            CISM name                 initMIP name
+--------------------------------------------------------------------------------------
+NOTE: Time averaged, yearly. If possible, the t=0 value should contain a one year time
+      average of the last year of the initialization.
+--------------------------------------------------------------------------------------
+(1)  total ice mass (kg)                        + imass                   lim
+(2)  mass above flotation (kg)                  + imass_above_flotation   limnsw
+(3)  grounded ice area (m^2)                      iareag                  iareag
+(4)  floating ice area (m^2)                      iareaf                  iareaf
+(5)  total SMB flux (kg/s)                      + total_smb_flux          tendacabf
+(6)  total BMB flux (kg/s)                      + total_bmb_flux          tendlibmassbf
+(7)  total calving flux (kg/s)                  + total_calving_flux      tendlicalvf

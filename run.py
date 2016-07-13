@@ -5,6 +5,7 @@ Script to run the Greenland initialization experiments for initMIP
 """
 
 import os
+import re
 import sys
 import math
 import shutil
@@ -80,14 +81,8 @@ processors_use = 128
 
 job_dict = jobs.titan_dict
 job_dict['RES_NUM'] = str(int(math.ceil(processors_use / 16.0)))
-job_dict['PBS_walltime'] = '01:00:00'
+job_dict['PBS_walltime'] = '02:00:00'
 
-# temerature solve to use:
-#   0 = use air temp for column temps 
-#   1 = prognostic
-#   2 = hold temps. fixed at init. values
-#   3 = enthalpy (untested)
-which_temperature = 3
 
 # ---------------------------
 # Hard coded GLISSADE options
@@ -95,48 +90,73 @@ which_temperature = 3
 #NOTE: These should really be turned into options... 
 dycore = "Albany"
 const_config = "./base/GIS.8km.Const.4Albany.config"
-test_config = "./base/GIS.8km.Test.4Glissade.config"
+const_path, const_name = os.path.split(abs_existing_file(const_config))
+const_root, const_ext = os.path.splitext(const_name)
+
+test_config = "./base/GIS.8km.Test.4Albany.config"
+test_path, test_name = os.path.split(abs_existing_file(test_config))
+test_root, test_ext = os.path.splitext(test_name)
+
+dsmb_file = 'forcings/GIS.8km.dSMB.4Glissade.nc'
+
+init_config = 'GIS.8km.InitCond.4Albany.09000_10000.config'
+
 
 # ---------------
 # main run script
 # ---------------
 def main():
+    #TODO:
+    # do the flux correction. 
 
-    const_path, const_name = os.path.split(abs_existing_file(const_config))
-    const_root, const_ext = os.path.splitext(const_name)
 
-    test_path, test_name = os.path.split(abs_existing_file(test_config))
-    test_root, test_ext = os.path.splitext(test_name)
+
     
-    os.chdir(args.working_dir)
     
-    # setup const config file
+    #TODO:
+    #      Okay, here we need to take the init output file, copy it to another name,
+    #      and for the "test" add in the acab_anomaly. 
+    
     config_parser = ConfigParser.SafeConfigParser()
-    config_parser.read(os.path.join(const_path,const_name))
-    
-    config_parser.set('options', 'temperature', str(which_temperature))
+    config_parser.read(os.path.join(args.working_dir, init_config))
+    which_temperature = config_parser.get('options', 'temperature')
+    print(which_temperature)
 
-    const_config_name = const_root+const_ext
-    with open(os.path.join(args.working_dir,const_config_name), 'w') as config_file:
-        config_parser.write(config_file)
-    os.chmod(os.path.join(args.working_dir,const_config_name), 0o664) # uses an octal number!
+
+    # setup const config file
+    with open(os.path.join(const_path,const_name), 'r') as const_in:
+        const_in_lines = const_in.readlines()
+    
+    
+    # write the new config file
+    with open(os.path.join(args.working_dir, const_name), 'w') as const_out:
+        for line in const_in_lines:
+            #TODO: change the input file to the one coppied above
+            line = re.sub(r'^temperature = [0-9]', 'temperature = '+str(which_temperature), line)
+            const_out.write(line)
+
+    os.chmod(os.path.join(args.working_dir,const_name), 0o664) # uses an octal number!
 
 
     # setup test config file
-    config_parser = ConfigParser.SafeConfigParser()
-    config_parser.read(os.path.join(test_path,test_name))
+    with open(os.path.join(test_path,test_name), 'r') as test_in:
+        test_in_lines = test_in.readlines()
     
-    config_parser.set('options', 'temperature', str(which_temperature))
+    
+    # write the new config file
+    with open(os.path.join(args.working_dir, test_name), 'w') as test_out:
+        for line in test_in_lines:
+            #TODO: change the input file to the one coppied above
+            line = re.sub(r'^temperature = [0-9]', 'temperature = '+str(which_temperature), line)
+            test_out.write(line)
 
-    test_config_name = test_root+test_ext
-    with open(os.path.join(args.working_dir,test_config_name), 'w') as config_file:
-        config_parser.write(config_file)
-    os.chmod(os.path.join(args.working_dir,test_config_name), 0o664) # uses an octal number!
+    os.chmod(os.path.join(args.working_dir,test_name), 0o664) # uses an octal number!
+
 
 
     # make const job script
     run_commands = ["cd "+args.working_dir+" \n",
-                    "aprun -n "+str(processors_use)+" "+args.driver+" "+os.path.join(args.working_dir,const_config_name)+" \n"]
+                    "aprun -n "+str(processors_use)+" "+args.driver+" "+os.path.join(args.working_dir,const_name)+" \n"]
     const_job_name = const_root+".bash"
     job_dict['PBS_N'] = os.path.basename(const_root)
     
@@ -144,7 +164,7 @@ def main():
 
     # make const job script
     run_commands = ["cd "+args.working_dir+" \n",
-                    "aprun -n "+str(processors_use)+" "+args.driver+" "+os.path.join(args.working_dir,test_config_name)+" \n"]
+                    "aprun -n "+str(processors_use)+" "+args.driver+" "+os.path.join(args.working_dir,test_name)+" \n"]
     test_job_name = test_root+".bash"
     job_dict['PBS_N'] = os.path.basename(test_root)
     

@@ -104,7 +104,7 @@ job_dict['PBS_walltime'] = '00:15:00'
 #   1 = prognostic
 #   2 = hold temps. fixed at init. values
 #   3 = enthalpy (untested)
-which_temperature = 3
+which_temperature = 1
 
 ## ---------------------------
 ## Hard coded GLISSADE options
@@ -210,6 +210,8 @@ def main():
     
     # Now the rest of the steps
     config_parser.set('options', 'flow_law', str(0))
+    #FIXME: NOT for albany
+    #config_parser.set('options', 'restart', str(1))
     config_parser.remove_option('options', 'temp_init')
     config_parser.set('ho_options', 'which_ho_approx', str(ho_approx_temp_spin)) 
     if dycore == "Glissade":

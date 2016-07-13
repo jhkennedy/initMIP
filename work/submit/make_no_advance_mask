@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# ==============================================
+# Make a mask to prevent the ice from advancing 
+# ==============================================
+
+ncap2 -s 'no_advance_mask=int(thk<1)' GIS.8km.InitCond.4Albany.09000_10000.out.nc mask.out.nc
+
+ncks -v no_advance_mask -d time,10,10 mask.out.nc -O GIS.8km.Const.4Albany.mask.out.nc
+
+ncatted -O -a standard_name,no_advance_mask,d,c,"\n" GIS.8km.Const.4Albany.mask.out.nc
+ncatted -O -a units,no_advance_mask,o,c,"1" GIS.8km.Const.4Albany.mask.out.nc
+ncatted -O -a long_name,no_advance_mask,o,c,"no advance mask" GIS.8km.Const.4Albany.mask.out.nc
+
